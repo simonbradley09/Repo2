@@ -1,6 +1,6 @@
 # PDF Chat — Android RAG App
 A local-first Android application that lets users chat with PDF documents using Retrieval-Augmented Generation (RAG). The app performs document parsing, chunking, indexing, and retrieval entirely on-device using BM25 retrieval, while leveraging the Anthropic Claude API for final answer generation.
----
+
 ## Overview
 PDF Chat is designed around a privacy-conscious, local-first architecture:
 * **On-device retrieval pipeline** using BM25 keyword scoring
@@ -100,7 +100,7 @@ The app constructs a prompt containing:
 The final prompt is sent to Anthropic Claude.
 ## 6. Response Persistence
 The generated answer is saved and displayed in the chat UI.
----
+
 # PDF Processing Flow
 ```text
 PDF File
@@ -162,7 +162,7 @@ This may become expensive with:
 ### Stateless LLM Calls
 Claude has no persistent memory between requests.
 Only the current request context is visible to the model.
----
+
 # Suggested Future Improvements
 ## Retrieval
 * Add vector embeddings

@@ -3,6 +3,7 @@
 A local-first Android application that lets users chat with PDF documents using Retrieval-Augmented Generation (RAG). 
 
 * https://github.com/simonbradley09/Repo2/blob/master/app/build/outputs/apk/debug/app-debug.apk
+* https://html-preview.github.io/?url=https://github.com/simonbradley09/Repo2/blob/master/pdf-chat-analysis.html
   
 The app performs document parsing, chunking, indexing, and retrieval entirely on-device using BM25 retrieval, while leveraging the Anthropic Claude API for final answer generation.
 

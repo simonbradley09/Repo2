@@ -1,5 +1,6 @@
 # PDF Chat — Android RAG App
-A local-first Android application that lets users chat with PDF documents using Retrieval-Augmented Generation (RAG). The app performs document parsing, chunking, indexing, and retrieval entirely on-device using BM25 retrieval, while leveraging the Anthropic Claude API for final answer generation.
+* A local-first Android application that lets users chat with PDF documents using Retrieval-Augmented Generation (RAG). 
+* The app performs document parsing, chunking, indexing, and retrieval entirely on-device using BM25 retrieval, while leveraging the Anthropic Claude API for final answer generation.
 ---
 ## Overview
 PDF Chat is designed around a privacy-conscious, local-first architecture:

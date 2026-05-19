@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Chat — Android RAG App Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:ital,wght@0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f8f9fb;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f0f2f5;
+    --bg-code: #f1f3f6;
+    --border: #e2e5eb;
+    --border-accent: #d0d5dd;
+    --text: #3d4554;
+    --text-dim: #7c8494;
+    --text-bright: #1a1f2b;
+    --accent: #3F51B5;
+    --accent-glow: rgba(63, 81, 181, 0.10);
+    --accent2: #673AB7;
+    --accent3: #4CAF50;
+    --accent4: #FF5722;
+    --accent5: #F44336;
+    --gradient-1: linear-gradient(135deg, #3F51B5 0%, #673AB7 100%);
+    --gradient-2: linear-gradient(135deg, #4CAF50 0%, #3F51B5 100%);
+    --gradient-3: linear-gradient(135deg, #FF5722 0%, #F44336 100%);
+  }
+
+  html { scroll-behavior: smooth; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ───── Ambient background ───── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(63, 81, 181, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(103, 58, 183, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(76, 175, 80, 0.02) 0%, transparent 50%);
+    z-index: -1;
+    animation: drift 30s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-3%, -2%) rotate(2deg); }
+  }
+
+  /* ───── Nav ───── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1rem 2rem;
+    backdrop-filter: blur(20px) saturate(1.5);
+    background: rgba(248, 249, 251, 0.85);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  nav .logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+
+  nav .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  nav a:hover {
+    color: var(--text-bright);
+    background: rgba(0,0,0,0.04);
+  }
+
+  /* ───── Hero ───── */
+  .hero {
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 5rem 2rem 2rem;
+    position: relative;
+    width: 100%;
+    background: linear-gradient(180deg, #eef0f7 0%, var(--bg) 100%);
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+    background: var(--bg-card);
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    box-shadow: 0 0 8px var(--accent3);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    color: var(--text-bright);
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s ease 0.1s both;
+  }
+
+  .hero h1 .gradient-text {
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero p {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    max-width: 580px;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+
+  .hero-stat {
+    text-align: center;
+  }
+
+  .hero-stat .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+
+  .hero-stat .label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.2rem;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ───── Sections ───── */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  .section-header {
+    margin-bottom: 2rem;
+  }
+
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .section-subtitle {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    margin-top: 0.75rem;
+    max-width: 600px;
+  }
+
+  /* ───── Req cards ───── */
+  .req-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .req-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .req-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  .req-card .icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .req-card h3 {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-bright);
+    margin-bottom: 0.4rem;
+  }
+
+  .req-card p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ───── Architecture ───── */
+  .arch-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .arch-layer {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem 2rem;
+    position: relative;
+    transition: all 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .arch-layer:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-card-hover);
+  }
+
+  .arch-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  .arch-connector::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--border), var(--border-accent));
+  }
+
+  .arch-layer .layer-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+
+  .layer-ui .layer-label { background: rgba(63, 81, 181, 0.10); color: var(--accent); }
+  .layer-vm .layer-label { background: rgba(103, 58, 183, 0.10); color: var(--accent2); }
+  .layer-repo .layer-label { background: rgba(76, 175, 80, 0.10); color: var(--accent3); }
+  .layer-data .layer-label { background: rgba(255, 87, 34, 0.10); color: var(--accent4); }
+
+  .arch-layer h3 {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-bright);
+    margin-bottom: 0.5rem;
+  }
+
+  .arch-layer p {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+  }
+
+  .arch-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+  }
+
+  .arch-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  /* ───── RAG Flow ───── */
+  .rag-timeline {
+    position: relative;
+    padding-left: 3rem;
+  }
+
+  .rag-timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--accent3), var(--accent4));
+    border-radius: 2px;
+  }
+
+  .rag-step {
+    position: relative;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.3s;
+  }
+
+  .rag-step:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-accent);
+  }
+
+  .rag-step::before {
+    content: attr(data-step);
+    position: absolute;
+    left: -3rem;
+    top: 1.5rem;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ffffff;
+    z-index: 2;
+  }
+
+  .rag-step:nth-child(1)::before { background: var(--accent4); }
+  .rag-step:nth-child(2)::before { background: var(--accent4); }
+  .rag-step:nth-child(3)::before { background: var(--accent2); }
+  .rag-step:nth-child(4)::before { background: #03A9F4; }
+  .rag-step:nth-child(5)::before { background: var(--accent); }
+
+  .rag-step .location-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+  }
+
+  .badge-local {
+    background: rgba(76, 175, 80, 0.10);
+    color: var(--accent3);
+  }
+
+  .badge-api {
+    background: rgba(3, 169, 244, 0.10);
+    color: #0277BD;
+  }
+
+  .rag-step h3 {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-bright);
+    margin-bottom: 0.4rem;
+  }
+
+  .rag-step p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ───── Components accordion ───── */
+  .components-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .component-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .component-item:hover {
+    border-color: var(--border-accent);
+  }
+
+  .component-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .component-header:hover { background: var(--bg-card-hover); }
+
+  .component-header .comp-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .component-header h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text-bright);
+    flex: 1;
+  }
+
+  .component-header .arrow {
+    color: var(--text-dim);
+    transition: transform 0.3s;
+    font-size: 0.8rem;
+  }
+
+  .component-item.open .arrow { transform: rotate(180deg); }
+
+  .component-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+
+  .component-item.open .component-body {
+    max-height: 600px;
+  }
+
+  .component-body-inner {
+    padding: 0 1.5rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .component-body-inner strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ───── Tuning table ───── */
+  .tuning-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .tuning-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .tuning-table thead {
+    background: rgba(0,0,0,0.02);
+  }
+
+  .tuning-table th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tuning-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .tuning-table tbody tr {
+    transition: background 0.2s;
+  }
+
+  .tuning-table tbody tr:hover {
+    background: var(--bg-card-hover);
+  }
+
+  .tuning-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .tuning-param {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 0.82rem;
+  }
+
+  .tuning-value {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent3);
+    font-size: 0.82rem;
+  }
+
+  .tuning-effect {
+    color: var(--text-dim);
+    font-size: 0.82rem;
+  }
+
+  /* ───── Design decisions ───── */
+  .decisions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .decision-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .decision-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+  }
+
+  .decision-card:nth-child(1)::before { background: var(--accent4); }
+  .decision-card:nth-child(2)::before { background: var(--accent4); }
+  .decision-card:nth-child(3)::before { background: #F44336; }
+  .decision-card:nth-child(4)::before { background: var(--accent4); }
+  .decision-card:nth-child(5)::before { background: #03A9F4; }
+  .decision-card:nth-child(6)::before { background: var(--accent2); }
+
+  .decision-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  .decision-card h3 {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-bright);
+    margin-bottom: 0.4rem;
+  }
+
+  .decision-card p {
+    font-size: 0.83rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  /* ───── Implications callout ───── */
+  .callout {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent4);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    margin-top: 2rem;
+  }
+
+  .callout h3 {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent4);
+    margin-bottom: 0.75rem;
+  }
+
+  .callout p {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.65;
+    margin-bottom: 0.75rem;
+  }
+
+  .callout p:last-child { margin-bottom: 0; }
+  .callout strong { color: var(--text); }
+
+  /* ───── Diagrams ───── */
+  .diagram-wrap {
+    margin: 1.5rem 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .diagram-wrap svg {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto;
+  }
+
+  .diagram-caption {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 1.25rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* ───── Download / Source cards ───── */
+  .cta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .cta-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .cta-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  }
+
+  .cta-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .cta-card h3 {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-bright);
+  }
+
+  .cta-card p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  .cta-card code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--bg-code);
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    border: none;
+  }
+
+  .cta-btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .cta-btn-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .cta-btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+  }
+
+  .cta-btn-secondary:hover {
+    background: rgba(63,81,181,0.06);
+  }
+
+  .cta-btn-green {
+    background: #4CAF50;
+    color: #ffffff;
+  }
+
+  .cta-btn-green:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .cta-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 0.25rem;
+  }
+
+  .file-tree {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    width: 100%;
+  }
+
+  .file-tree .dir { color: var(--accent); font-weight: 600; }
+  .file-tree .file { color: var(--text); }
+  .file-tree .highlight { color: #FF5722; font-weight: 600; }
+
+  /* ───── Footer ───── */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  footer span {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+
+  /* ───── Responsive ───── */
+  @media (max-width: 700px) {
+    nav { padding: 0.75rem 1rem; gap: 1rem; flex-wrap: wrap; }
+    nav .nav-links { gap: 0; }
+    section { padding: 1.5rem 1.25rem; }
+    .hero { padding: 4.5rem 1.25rem 1.5rem; }
+    .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+    .arch-layer { padding: 1.25rem; }
+    .rag-timeline { padding-left: 2.5rem; }
+    .tuning-table th, .tuning-table td { padding: 0.75rem; }
+  }
+
+  /* ───── Scroll animations ───── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">PDF Chat</div>
+  <div class="nav-links">
+    <a href="#requirements">Requirements</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#rag-flow">RAG Flow</a>
+    <a href="#components">Components</a>
+    <a href="#decisions">Decisions</a>
+    <a href="#tuning">Tuning</a>
+    <a href="#source">Source</a>
+    <a href="#download">Download</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Claude Code Analysis
+  </div>
+  <h1>
+    <span class="gradient-text">PDF Chat</span><br>
+    Android RAG App
+  </h1>
+  <p>A local-first Android app that lets you ask questions about your PDF documents using a BM25 retrieval pipeline and the Anthropic Claude API.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="value">100%</div>
+      <div class="label">On-Device RAG</div>
+    </div>
+    <div class="hero-stat">
+      <div class="value">BM25</div>
+      <div class="label">Retrieval Engine</div>
+    </div>
+    <div class="hero-stat">
+      <div class="value">Sonnet</div>
+      <div class="label">Language Model</div>
+    </div>
+  </div>
+</div>
+
+<!-- Requirements -->
+<section id="requirements">
+  <div class="section-header reveal">
+    <div class="section-tag">01 — Requirements</div>
+    <div class="section-title">What You Need</div>
+    <p class="section-subtitle">Minimum platform requirements and dependencies for running the app.</p>
+  </div>
+  <div class="req-grid">
+    <div class="req-card reveal">
+      <div class="icon" style="background:rgba(63,81,181,0.08);">📱</div>
+      <h3>Android 10+</h3>
+      <p>API level 29 minimum, targeting API 35. Modern Android platform features required.</p>
+    </div>
+    <div class="req-card reveal">
+      <div class="icon" style="background:rgba(3,169,244,0.07);">🔑</div>
+      <h3>Anthropic API Key</h3>
+      <p>User-supplied key, stored on-device with AES-256-GCM encryption via AndroidX Security.</p>
+    </div>
+    <div class="req-card reveal">
+      <div class="icon" style="background:rgba(76,175,80,0.08);">🌐</div>
+      <h3>Internet Permission</h3>
+      <p>Required only for Claude API calls. All retrieval and processing is local.</p>
+    </div>
+    <div class="req-card reveal">
+      <div class="icon" style="background:rgba(255,87,34,0.07);">📁</div>
+      <h3>Storage Access</h3>
+      <p>Read permission for PDF file access, limited to SDK ≤ 32. Uses persistable URI permissions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section id="architecture">
+  <div class="section-header reveal">
+    <div class="section-tag">02 — Architecture</div>
+    <div class="section-title">Layer by Layer</div>
+    <p class="section-subtitle">A clean layered architecture from Compose UI down to on-device data processing.</p>
+  </div>
+
+  <!-- Architecture Diagram -->
+  <div class="diagram-wrap reveal">
+    <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <defs>
+        <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3F51B5"/><stop offset="100%" stop-color="#303F9F"/></linearGradient>
+        <linearGradient id="gPurple" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#673AB7"/><stop offset="100%" stop-color="#512DA8"/></linearGradient>
+        <linearGradient id="gGreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4CAF50"/><stop offset="100%" stop-color="#388E3C"/></linearGradient>
+        <linearGradient id="gOrange" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FF5722"/><stop offset="100%" stop-color="#E64A19"/></linearGradient>
+        <filter id="softGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <!-- UI Layer -->
+      <rect x="50" y="20" width="800" height="80" rx="12" fill="#ffffff" stroke="#3F51B5" stroke-width="1.5" opacity="0.9"/>
+      <rect x="50" y="20" width="4" height="80" rx="2" fill="url(#gBlue)"/>
+      <text x="74" y="48" fill="#3F51B5" font-size="11" font-weight="700" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">UI LAYER</text>
+      <text x="74" y="72" fill="#3d4554" font-size="13" font-weight="600">Jetpack Compose</text>
+      <rect x="350" y="35" width="110" height="28" rx="6" fill="rgba(63,81,181,0.07)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="405" y="54" fill="#546E7A" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">ChatScreen</text>
+      <rect x="475" y="35" width="120" height="28" rx="6" fill="rgba(63,81,181,0.07)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="535" y="54" fill="#546E7A" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">LibraryScreen</text>
+      <rect x="610" y="35" width="130" height="28" rx="6" fill="rgba(63,81,181,0.07)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="675" y="54" fill="#546E7A" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">SettingsScreen</text>
+      <rect x="350" y="68" width="180" height="24" rx="6" fill="rgba(63,81,181,0.05)" stroke="#e2e5eb" stroke-width="1"/>
+      <text x="440" y="84" fill="#7c8494" font-size="10" text-anchor="middle" font-family="'JetBrains Mono', monospace">AppNavigation (bottom tabs)</text>
+
+      <!-- Arrow 1 -->
+      <line x1="450" y1="100" x2="450" y2="140" stroke="#d0d5dd" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="460" y="125" fill="#7c8494" font-size="9.5" font-family="'JetBrains Mono', monospace">StateFlow / collectAsState</text>
+
+      <!-- ViewModel Layer -->
+      <rect x="50" y="140" width="800" height="80" rx="12" fill="#ffffff" stroke="#673AB7" stroke-width="1.5" opacity="0.9"/>
+      <rect x="50" y="140" width="4" height="80" rx="2" fill="url(#gPurple)"/>
+      <text x="74" y="168" fill="#673AB7" font-size="11" font-weight="700" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">VIEWMODEL LAYER</text>
+      <text x="74" y="192" fill="#3d4554" font-size="13" font-weight="600">AndroidViewModels</text>
+      <rect x="380" y="155" width="200" height="50" rx="8" fill="rgba(103,58,183,0.06)" stroke="#673AB7" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="480" y="176" fill="#673AB7" font-size="11" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">ChatViewModel</text>
+      <text x="480" y="194" fill="#7c8494" font-size="9.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">orchestrates full RAG flow</text>
+      <rect x="600" y="155" width="200" height="50" rx="8" fill="rgba(103,58,183,0.06)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="700" y="176" fill="#546E7A" font-size="11" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">LibraryViewModel</text>
+      <text x="700" y="194" fill="#7c8494" font-size="9.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">PDF import &amp; processing</text>
+
+      <!-- Arrow 2 -->
+      <line x1="450" y1="220" x2="450" y2="260" stroke="#d0d5dd" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="460" y="245" fill="#7c8494" font-size="9.5" font-family="'JetBrains Mono', monospace">suspend functions / Flow</text>
+
+      <!-- Repository Layer -->
+      <rect x="50" y="260" width="800" height="70" rx="12" fill="#ffffff" stroke="#4CAF50" stroke-width="1.5" opacity="0.9"/>
+      <rect x="50" y="260" width="4" height="70" rx="2" fill="url(#gGreen)"/>
+      <text x="74" y="288" fill="#4CAF50" font-size="11" font-weight="700" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">REPOSITORY LAYER</text>
+      <text x="74" y="310" fill="#3d4554" font-size="13" font-weight="600">PdfRepository &amp; ChatRepository</text>
+      <rect x="420" y="275" width="150" height="28" rx="6" fill="rgba(76,175,80,0.06)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="495" y="294" fill="#546E7A" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">PdfRepository</text>
+      <rect x="590" y="275" width="150" height="28" rx="6" fill="rgba(76,175,80,0.06)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="665" y="294" fill="#546E7A" font-size="11" text-anchor="middle" font-family="'JetBrains Mono', monospace">ChatRepository</text>
+
+      <!-- Arrow 3 -->
+      <line x1="450" y1="330" x2="450" y2="370" stroke="#d0d5dd" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+      <!-- Data Layer -->
+      <rect x="50" y="370" width="800" height="170" rx="12" fill="#ffffff" stroke="#FF5722" stroke-width="1.5" opacity="0.9"/>
+      <rect x="50" y="370" width="4" height="170" rx="2" fill="url(#gOrange)"/>
+      <text x="74" y="398" fill="#FF5722" font-size="11" font-weight="700" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">DATA LAYER</text>
+      <text x="74" y="422" fill="#3d4554" font-size="13" font-weight="600">On-Device Processing</text>
+
+      <!-- Row 1: 4 orange data boxes -->
+      <rect x="80" y="438" width="180" height="40" rx="8" fill="rgba(255,87,34,0.05)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="170" y="455" fill="#FF5722" font-size="10" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">AppDatabase</text>
+      <text x="170" y="470" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">Room Singleton</text>
+
+      <rect x="270" y="438" width="180" height="40" rx="8" fill="rgba(255,87,34,0.05)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="360" y="455" fill="#FF5722" font-size="10" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">PdfTextExtractor</text>
+      <text x="360" y="470" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">PdfBox Android</text>
+
+      <rect x="460" y="438" width="180" height="40" rx="8" fill="rgba(255,87,34,0.05)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="550" y="455" fill="#FF5722" font-size="10" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">TextChunker</text>
+      <text x="550" y="470" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">400w / 50w overlap</text>
+
+      <rect x="650" y="438" width="180" height="40" rx="8" fill="rgba(255,87,34,0.05)" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="740" y="455" fill="#FF5722" font-size="10" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">Bm25Retriever</text>
+      <text x="740" y="470" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">Pure Kotlin</text>
+
+      <!-- Row 2: ClaudeApiClient (teal) + SecurePrefs (red) -->
+      <rect x="80" y="488" width="200" height="40" rx="8" fill="rgba(3,169,244,0.07)" stroke="#03A9F4" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="180" y="505" fill="#03A9F4" font-size="10" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">ClaudeApiClient</text>
+      <text x="180" y="520" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">Raw HTTP · sonnet-4-6</text>
+
+      <rect x="290" y="488" width="200" height="40" rx="8" fill="rgba(244,67,54,0.06)" stroke="#F44336" stroke-width="1"/>
+      <text x="390" y="505" fill="#F44336" font-size="10" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">SecurePreferences</text>
+      <text x="390" y="520" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">AES-256-GCM</text>
+
+      <!-- Legend -->
+      <rect x="550" y="493" width="8" height="8" rx="2" fill="#FF5722" opacity="0.6"/>
+      <text x="564" y="501" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">on-device</text>
+      <rect x="630" y="493" width="8" height="8" rx="2" fill="#03A9F4" opacity="0.6"/>
+      <text x="644" y="501" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">API call</text>
+      <rect x="700" y="493" width="8" height="8" rx="2" fill="#F44336" opacity="0.6"/>
+      <text x="714" y="501" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">security</text>
+    </svg>
+    <div class="diagram-caption">Fig 1 — Layered architecture from Compose UI to on-device data processing</div>
+  </div>
+
+  <div class="arch-flow">
+    <div class="arch-layer layer-ui reveal">
+      <span class="layer-label">UI Layer</span>
+      <h3>Jetpack Compose Screens</h3>
+      <p>Three screens — Chat, Library, Settings — with a bottom NavigationBar and Compose Navigation with state restoration.</p>
+      <div class="arch-chips">
+        <span class="arch-chip">ChatScreen</span>
+        <span class="arch-chip">LibraryScreen</span>
+        <span class="arch-chip">SettingsScreen</span>
+        <span class="arch-chip">AppNavigation</span>
+      </div>
+    </div>
+    <div class="arch-connector">▼ StateFlow / collectAsState</div>
+    <div class="arch-layer layer-vm reveal">
+      <span class="layer-label">ViewModel Layer</span>
+      <h3>AndroidViewModels</h3>
+      <p>ChatViewModel orchestrates the full RAG flow. LibraryViewModel handles PDF importing, processing, and deletion.</p>
+      <div class="arch-chips">
+        <span class="arch-chip">ChatViewModel</span>
+        <span class="arch-chip">LibraryViewModel</span>
+      </div>
+    </div>
+    <div class="arch-connector">▼ suspend / Flow</div>
+    <div class="arch-layer layer-repo reveal">
+      <span class="layer-label">Repository Layer</span>
+      <h3>PdfRepository & ChatRepository</h3>
+      <p>Abstraction over data sources, exposing clean suspend functions for the ViewModels.</p>
+      <div class="arch-chips">
+        <span class="arch-chip">PdfRepository</span>
+        <span class="arch-chip">ChatRepository</span>
+      </div>
+    </div>
+    <div class="arch-connector">▼</div>
+    <div class="arch-layer layer-data reveal">
+      <span class="layer-label">Data Layer</span>
+      <h3>On-Device Processing</h3>
+      <p>Room database for persistence, PdfBox for extraction, BM25 for retrieval, and a single Claude API client.</p>
+      <div class="arch-chips">
+        <span class="arch-chip">AppDatabase</span>
+        <span class="arch-chip">PdfTextExtractor</span>
+        <span class="arch-chip">TextChunker</span>
+        <span class="arch-chip">Bm25Retriever</span>
+        <span class="arch-chip">ClaudeApiClient</span>
+        <span class="arch-chip">SecurePreferences</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RAG Flow -->
+<section id="rag-flow">
+  <div class="section-header reveal">
+    <div class="section-tag">03 — RAG Workflow</div>
+    <div class="section-title">What Happens When You Send a Message</div>
+    <p class="section-subtitle">The entire retrieval pipeline is on-device — only the final assembled prompt touches the Anthropic API.</p>
+  </div>
+
+  <!-- RAG Pipeline Diagram -->
+  <div class="diagram-wrap reveal">
+    <svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <defs>
+        <linearGradient id="rLocal" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4CAF50" stop-opacity="0.15"/><stop offset="100%" stop-color="#4CAF50" stop-opacity="0.03"/></linearGradient>
+        <linearGradient id="rApi" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#FF5722" stop-opacity="0.15"/><stop offset="100%" stop-color="#FF5722" stop-opacity="0.03"/></linearGradient>
+        <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#4CAF50" opacity="0.7"/></marker>
+        <marker id="arrowO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#FF5722" opacity="0.7"/></marker>
+        <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#3F51B5" opacity="0.7"/></marker>
+        <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#673AB7" opacity="0.7"/></marker>
+        <marker id="arrowY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#03A9F4" opacity="0.7"/></marker>
+      </defs>
+
+      <!-- Local zone background (neutral to avoid layer confusion) -->
+      <rect x="20" y="15" width="590" height="350" rx="14" fill="rgba(0,0,0,0.02)" stroke="#d0d5dd" stroke-width="1" stroke-dasharray="6,4" opacity="0.7"/>
+      <text x="40" y="42" fill="#546E7A" font-size="10" font-weight="700" letter-spacing="0.1em" font-family="'JetBrains Mono', monospace">ON-DEVICE</text>
+
+      <!-- API zone background (teal) -->
+      <rect x="630" y="15" width="250" height="350" rx="14" fill="rgba(3,169,244,0.04)" stroke="#03A9F4" stroke-width="1" stroke-dasharray="6,4" opacity="0.7"/>
+      <text x="650" y="42" fill="#03A9F4" font-size="10" font-weight="700" letter-spacing="0.1em" font-family="'JetBrains Mono', monospace">ANTHROPIC API</text>
+
+      <!-- Step 1: User question (UI layer = blue) -->
+      <rect x="45" y="65" width="140" height="70" rx="10" fill="#ffffff" stroke="#3F51B5" stroke-width="1.5"/>
+      <text x="115" y="92" fill="#3F51B5" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">USER</text>
+      <text x="115" y="110" fill="#3d4554" font-size="10" text-anchor="middle">"What are the</text>
+      <text x="115" y="124" fill="#3d4554" font-size="10" text-anchor="middle">financial risks?"</text>
+
+      <!-- Arrow to Room save -->
+      <line x1="185" y1="100" x2="210" y2="100" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrowO)"/>
+
+      <!-- Step 2: Save to Room (Data layer = orange) -->
+      <rect x="215" y="72" width="100" height="56" rx="8" fill="#ffffff" stroke="#FF5722" stroke-width="1"/>
+      <text x="265" y="96" fill="#FF5722" font-size="10" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono', monospace">Room DB</text>
+      <text x="265" y="114" fill="#7c8494" font-size="9" text-anchor="middle">save message</text>
+
+      <!-- Arrow down to BM25 -->
+      <line x1="265" y1="128" x2="265" y2="158" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrowO)"/>
+
+      <!-- Step 3: BM25 retrieval (Data layer = orange) -->
+      <rect x="160" y="162" width="210" height="90" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <text x="265" y="186" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">BM25 RETRIEVER</text>
+      <text x="265" y="204" fill="#3d4554" font-size="10" text-anchor="middle">Score all chunks vs query</text>
+      <text x="265" y="220" fill="#7c8494" font-size="9.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">k1=1.5  b=0.75  top-5</text>
+
+      <!-- Chunk store feeding into BM25 -->
+      <rect x="45" y="175" width="100" height="64" rx="8" fill="#ffffff" stroke="#d0d5dd" stroke-width="1"/>
+      <text x="95" y="200" fill="#FF5722" font-size="10" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono', monospace">All Chunks</text>
+      <text x="95" y="218" fill="#7c8494" font-size="9" text-anchor="middle">SQLite table</text>
+      <line x1="145" y1="207" x2="157" y2="207" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrowO)"/>
+
+      <!-- Arrow to prompt assembly -->
+      <line x1="370" y1="207" x2="400" y2="207" stroke="#673AB7" stroke-width="1.5" marker-end="url(#arrowP)"/>
+
+      <!-- Step 4: Prompt Assembly (ViewModel layer = purple) -->
+      <rect x="405" y="140" width="190" height="135" rx="10" fill="#ffffff" stroke="#673AB7" stroke-width="1.5"/>
+      <text x="500" y="165" fill="#673AB7" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">PROMPT ASSEMBLY</text>
+
+      <!-- Mini prompt structure -->
+      <rect x="420" y="178" width="160" height="20" rx="4" fill="rgba(103,58,183,0.08)" stroke="#d0d5dd" stroke-width="0.5"/>
+      <text x="500" y="192" fill="#673AB7" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">system: "only from context"</text>
+
+      <rect x="420" y="202" width="160" height="20" rx="4" fill="rgba(255,87,34,0.07)" stroke="#d0d5dd" stroke-width="0.5"/>
+      <text x="500" y="216" fill="#FF5722" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">context: [5 chunks + sources]</text>
+
+      <rect x="420" y="226" width="160" height="20" rx="4" fill="rgba(255,87,34,0.05)" stroke="#d0d5dd" stroke-width="0.5"/>
+      <text x="500" y="240" fill="#FF5722" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">history: last 20 messages</text>
+
+      <rect x="420" y="250" width="160" height="16" rx="4" fill="rgba(63,81,181,0.08)" stroke="#d0d5dd" stroke-width="0.5"/>
+      <text x="500" y="262" fill="#3F51B5" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">question: user query</text>
+
+      <!-- Arrow to Claude (teal = API) -->
+      <line x1="595" y1="207" x2="650" y2="207" stroke="#03A9F4" stroke-width="2" marker-end="url(#arrowY)"/>
+      <text x="623" y="198" fill="#03A9F4" font-size="8" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">POST</text>
+
+      <!-- Step 5: Claude (teal = API) -->
+      <rect x="655" y="150" width="200" height="115" rx="12" fill="#ffffff" stroke="#03A9F4" stroke-width="1.5"/>
+      <text x="755" y="180" fill="#03A9F4" font-size="13" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">Claude</text>
+      <text x="755" y="200" fill="#3d4554" font-size="10.5" text-anchor="middle">sonnet-4-6</text>
+      <text x="755" y="220" fill="#7c8494" font-size="9" text-anchor="middle">reads context chunks</text>
+      <text x="755" y="236" fill="#7c8494" font-size="9" text-anchor="middle">generates answer with citations</text>
+      <text x="755" y="252" fill="#7c8494" font-size="9" text-anchor="middle" font-family="'JetBrains Mono', monospace">max_tokens: 1024</text>
+
+      <!-- Response arrow back (to UI layer = blue) -->
+      <path d="M 755 265 L 755 310 L 265 310 L 265 330" stroke="#3F51B5" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowB)"/>
+      <text x="510" y="303" fill="#3F51B5" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">response JSON</text>
+
+      <!-- Step 6: Display (UI layer = blue) -->
+      <rect x="210" y="334" width="110" height="28" rx="6" fill="#ffffff" stroke="#3F51B5" stroke-width="1.5"/>
+      <text x="265" y="353" fill="#3F51B5" font-size="10" font-weight="600" text-anchor="middle" font-family="'JetBrains Mono', monospace">Save &amp; Display</text>
+    </svg>
+    <div class="diagram-caption">Fig 2 — Complete RAG pipeline: on-device retrieval feeds a single Anthropic API call</div>
+  </div>
+
+  <div class="rag-timeline">
+    <div class="rag-step reveal" data-step="1">
+      <span class="location-badge badge-local">Local</span>
+      <h3>Save User Message</h3>
+      <p>The user's question is persisted to the Room database for conversation history.</p>
+    </div>
+    <div class="rag-step reveal" data-step="2">
+      <span class="location-badge badge-local">Local</span>
+      <h3>BM25 Retrieval</h3>
+      <p>All text chunks are loaded from Room. Each chunk is scored against the query using BM25 keyword math (k1=1.5, b=0.75). The top 5 scoring chunks are selected.</p>
+    </div>
+    <div class="rag-step reveal" data-step="3">
+      <span class="location-badge badge-local">Local</span>
+      <h3>Prompt Assembly</h3>
+      <p>A context block is assembled from the 5 chunks with source PDF name and page number labels. The last 20 messages of history are prepended. The final messages array is constructed.</p>
+    </div>
+    <div class="rag-step reveal" data-step="4">
+      <span class="location-badge badge-api">Anthropic API</span>
+      <h3>Claude API Call</h3>
+      <p>A single POST to <code>/v1/messages</code> with the system prompt ("answer only from context, cite sources") and the assembled request body. Claude reads the pasted chunk text and responds.</p>
+    </div>
+    <div class="rag-step reveal" data-step="5">
+      <span class="location-badge badge-local">Local</span>
+      <h3>Save & Display</h3>
+      <p>Claude's response is saved to Room DB and displayed in the chat UI.</p>
+    </div>
+  </div>
+
+  <div class="callout reveal">
+    <h3>⚠ Implications of This Approach</h3>
+    <p><strong>BM25 vs. Semantic Search:</strong> BM25 matches on exact/stem word overlap. If you ask "what are the financial risks?" and the PDF says "fiscal exposure", BM25 scores that chunk low. A vector-embedding approach would catch the paraphrase; this one won't.</p>
+    <p><strong>Memory Pressure:</strong> <code>getAllChunks()</code> loads every chunk from every PDF into memory on every query. For large libraries this gets slow and memory-heavy — there's no pre-filtering by document before scoring.</p>
+    <p><strong>No Persistent LLM Memory:</strong> Claude has no memory between calls. It only knows what's in the current request body — the 5 chunks plus the last 20 messages.</p>
+  </div>
+</section>
+
+<!-- Components -->
+<section id="components">
+  <div class="section-header reveal">
+    <div class="section-tag">04 — Key Components</div>
+    <div class="section-title">Under the Hood</div>
+    <p class="section-subtitle">Click any component to see what it does.</p>
+  </div>
+
+  <!-- Chunking & BM25 Diagram -->
+  <div class="diagram-wrap reveal">
+    <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <defs>
+        <marker id="arrowO3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#FF5722" opacity="0.7"/></marker>
+      </defs>
+
+      <!-- Title -->
+      <text x="450" y="24" fill="#1a1f2b" font-size="13" font-weight="700" text-anchor="middle">PDF → Chunks → BM25 Scoring</text>
+
+      <!-- ── Column 1: PDF Source ── -->
+      <rect x="30" y="50" width="160" height="140" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <text x="110" y="76" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">PDF FILE</text>
+      <!-- Page lines -->
+      <rect x="50" y="92" width="120" height="5" rx="2" fill="#d0d5dd"/>
+      <rect x="50" y="103" width="120" height="5" rx="2" fill="#d0d5dd"/>
+      <rect x="50" y="114" width="120" height="5" rx="2" fill="#d0d5dd"/>
+      <rect x="50" y="125" width="80" height="5" rx="2" fill="#d0d5dd"/>
+      <text x="110" y="155" fill="#7c8494" font-size="9" text-anchor="middle">PdfBox page-by-page</text>
+      <text x="110" y="168" fill="#7c8494" font-size="9" text-anchor="middle">text extraction</text>
+
+      <!-- Arrow 1 -->
+      <line x1="190" y1="120" x2="230" y2="120" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrowO3)"/>
+
+      <!-- ── Column 2: Text Chunker ── -->
+      <rect x="235" y="50" width="290" height="260" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <text x="380" y="76" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">TEXT CHUNKER</text>
+      <text x="380" y="94" fill="#7c8494" font-size="9" text-anchor="middle" font-family="'JetBrains Mono', monospace">400 words per chunk · 50 word overlap</text>
+
+      <!-- Chunk 1 bar -->
+      <rect x="255" y="112" width="250" height="30" rx="5" fill="rgba(255,87,34,0.08)" stroke="#FF5722" stroke-width="1"/>
+      <text x="380" y="131" fill="#FF5722" font-size="10" text-anchor="middle" font-family="'JetBrains Mono', monospace">Chunk 1 — 400 words</text>
+
+      <!-- Overlap highlight -->
+      <rect x="455" y="112" width="50" height="66" rx="0" fill="rgba(255,87,34,0.09)"/>
+
+      <!-- Chunk 2 bar -->
+      <rect x="455" y="148" width="50" height="30" rx="5" fill="rgba(255,87,34,0.06)" stroke="#FF5722" stroke-width="1" stroke-dasharray="3,2"/>
+      <rect x="255" y="148" width="250" height="30" rx="5" fill="rgba(255,87,34,0.06)" stroke="#FF5722" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="380" y="167" fill="#FF5722" font-size="10" text-anchor="middle" font-family="'JetBrains Mono', monospace">Chunk 2 — 400 words</text>
+
+      <!-- Overlap label -->
+      <text x="480" y="200" fill="#FF5722" font-size="9" text-anchor="middle" font-weight="600" font-family="'JetBrains Mono', monospace">↕ 50w overlap</text>
+
+      <text x="380" y="232" fill="#7c8494" font-size="9" text-anchor="middle">Each chunk keeps its source</text>
+      <text x="380" y="246" fill="#7c8494" font-size="9" text-anchor="middle">PDF name + page number</text>
+
+      <!-- Arrow 2 -->
+      <line x1="525" y1="120" x2="565" y2="120" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrowO3)"/>
+
+      <!-- ── Column 3: BM25 Scoring ── -->
+      <rect x="570" y="50" width="300" height="260" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <text x="720" y="76" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">BM25 SCORING</text>
+      <text x="720" y="94" fill="#7c8494" font-size="9" text-anchor="middle" font-family="'JetBrains Mono', monospace">k1 = 1.5 · b = 0.75</text>
+
+      <!-- Score bars -->
+      <text x="590" y="124" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">chunk_17</text>
+      <rect x="660" y="112" width="180" height="16" rx="4" fill="rgba(255,87,34,0.12)" stroke="#FF5722" stroke-width="0.5"/>
+      <text x="848" y="124" fill="#FF5722" font-size="9" font-family="'JetBrains Mono', monospace">0.92</text>
+
+      <text x="590" y="148" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">chunk_04</text>
+      <rect x="660" y="136" width="138" height="16" rx="4" fill="rgba(255,87,34,0.09)" stroke="#FF5722" stroke-width="0.5"/>
+      <text x="806" y="148" fill="#FF5722" font-size="9" font-family="'JetBrains Mono', monospace">0.71</text>
+
+      <text x="590" y="172" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">chunk_31</text>
+      <rect x="660" y="160" width="100" height="16" rx="4" fill="rgba(255,87,34,0.07)" stroke="#FF5722" stroke-width="0.5"/>
+      <text x="768" y="172" fill="#FF5722" font-size="9" font-family="'JetBrains Mono', monospace">0.54</text>
+
+      <text x="590" y="196" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">chunk_09</text>
+      <rect x="660" y="184" width="64" height="16" rx="4" fill="rgba(255,87,34,0.04)" stroke="#d0d5dd" stroke-width="0.5"/>
+      <text x="732" y="196" fill="#7c8494" font-size="9" font-family="'JetBrains Mono', monospace">0.33</text>
+
+      <text x="720" y="222" fill="#7c8494" font-size="8.5" text-anchor="middle" font-family="'JetBrains Mono', monospace">... all chunks scored</text>
+
+      <!-- Result box -->
+      <rect x="590" y="240" width="260" height="50" rx="8" fill="rgba(255,87,34,0.04)" stroke="#FF5722" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="720" y="261" fill="#FF5722" font-size="10" text-anchor="middle" font-weight="600">→ Top 5 chunks returned</text>
+      <text x="720" y="278" fill="#7c8494" font-size="9" text-anchor="middle">with PDF names + page numbers</text>
+    </svg>
+    <div class="diagram-caption">Fig 3 — PDF extraction → overlapping chunking → BM25 keyword scoring</div>
+  </div>
+
+  <div class="components-list">
+    <div class="component-item reveal">
+      <div class="component-header" onclick="toggleComponent(this)">
+        <div class="comp-icon" style="background:rgba(255,87,34,0.07);">🗄</div>
+        <h3>AppDatabase — Room Singleton</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="component-body">
+        <div class="component-body-inner">
+          Room database with 3 tables: <strong>PdfDocumentEntity</strong> stores PDF metadata (name, URI, page count). <strong>TextChunkEntity</strong> stores chunked text linked to a PDF by pdfId, with page number and chunk index. <strong>ChatMessageEntity</strong> stores full conversation history (role + content).
+        </div>
+      </div>
+    </div>
+    <div class="component-item reveal">
+      <div class="component-header" onclick="toggleComponent(this)">
+        <div class="comp-icon" style="background:rgba(255,87,34,0.07);">📄</div>
+        <h3>PdfTextExtractor — PdfBox Android</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="component-body">
+        <div class="component-body-inner">
+          Uses PdfBox Android to extract text page-by-page via <strong>PDFTextStripper</strong>. Processes each page independently, preserving page number attribution for downstream citation.
+        </div>
+      </div>
+    </div>
+    <div class="component-item reveal">
+      <div class="component-header" onclick="toggleComponent(this)">
+        <div class="comp-icon" style="background:rgba(255,87,34,0.07);">✂️</div>
+        <h3>TextChunker — 400-word Overlapping Chunks</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="component-body">
+        <div class="component-body-inner">
+          Splits page text into <strong>400-word chunks</strong> with <strong>50-word overlap</strong>. The overlap prevents answers that straddle a chunk boundary from being missed. Preserves page number attribution for each chunk.
+        </div>
+      </div>
+    </div>
+    <div class="component-item reveal">
+      <div class="component-header" onclick="toggleComponent(this)">
+        <div class="comp-icon" style="background:rgba(255,87,34,0.07);">🔍</div>
+        <h3>Bm25Retriever — Pure Kotlin BM25</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="component-body">
+        <div class="component-body-inner">
+          Pure Kotlin BM25 implementation with <strong>k1=1.5</strong> and <strong>b=0.75</strong>. Scores all stored chunks against the query and returns the top 5. No embeddings, no vector database — purely keyword-based retrieval.
+        </div>
+      </div>
+    </div>
+    <div class="component-item reveal">
+      <div class="component-header" onclick="toggleComponent(this)">
+        <div class="comp-icon" style="background:rgba(3,169,244,0.07);">🤖</div>
+        <h3>ClaudeApiClient — Raw HTTP</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="component-body">
+        <div class="component-body-inner">
+          Raw <strong>HttpURLConnection</strong> call to <code>https://api.anthropic.com/v1/messages</code> using claude-sonnet-4-6. Max tokens set to 1024. No OkHttp, no Retrofit — minimal dependency footprint. System prompt instructs Claude to answer only from provided context.
+        </div>
+      </div>
+    </div>
+    <div class="component-item reveal">
+      <div class="component-header" onclick="toggleComponent(this)">
+        <div class="comp-icon" style="background:rgba(244,67,54,0.08);">🔐</div>
+        <h3>SecurePreferences — AES-256 Encrypted Storage</h3>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="component-body">
+        <div class="component-body-inner">
+          Uses <strong>EncryptedSharedPreferences</strong> with AES-256-GCM via AndroidX Security for API key storage. The key never leaves the device in plaintext.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Database Schema Diagram -->
+  <div class="diagram-wrap reveal">
+    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+      <defs>
+        <marker id="arrowO5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#FF5722" opacity="0.7"/></marker>
+      </defs>
+      <text x="450" y="24" fill="#1a1f2b" font-size="13" font-weight="700" text-anchor="middle">Room Database — 3-Table Schema</text>
+
+      <!-- PdfDocumentEntity (Data layer = orange) -->
+      <rect x="30" y="48" width="260" height="155" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <rect x="30" y="48" width="260" height="32" rx="10" fill="rgba(255,87,34,0.07)"/>
+      <rect x="30" y="70" width="260" height="10" fill="#ffffff"/>
+      <text x="160" y="70" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">PdfDocumentEntity</text>
+      <text x="50" y="102" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">id</text><text x="260" y="102" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Long  PK</text>
+      <line x1="45" y1="110" x2="275" y2="110" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="50" y="126" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">name</text><text x="260" y="126" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">String</text>
+      <line x1="45" y1="134" x2="275" y2="134" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="50" y="150" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">uri</text><text x="260" y="150" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">String</text>
+      <line x1="45" y1="158" x2="275" y2="158" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="50" y="174" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">pageCount</text><text x="260" y="174" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Int</text>
+      <line x1="45" y1="182" x2="275" y2="182" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="50" y="198" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">addedAt</text><text x="260" y="198" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Long</text>
+
+      <!-- TextChunkEntity (Data layer = orange) -->
+      <rect x="320" y="48" width="260" height="155" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <rect x="320" y="48" width="260" height="32" rx="10" fill="rgba(255,87,34,0.07)"/>
+      <rect x="320" y="70" width="260" height="10" fill="#ffffff"/>
+      <text x="450" y="70" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">TextChunkEntity</text>
+      <text x="340" y="102" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">id</text><text x="550" y="102" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Long  PK</text>
+      <line x1="335" y1="110" x2="565" y2="110" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="340" y="126" fill="#FF5722" font-size="10" font-family="'JetBrains Mono', monospace">pdfId</text><text x="550" y="126" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Long  FK →</text>
+      <line x1="335" y1="134" x2="565" y2="134" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="340" y="150" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">text</text><text x="550" y="150" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">String</text>
+      <line x1="335" y1="158" x2="565" y2="158" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="340" y="174" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">pageNumber</text><text x="550" y="174" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Int</text>
+      <line x1="335" y1="182" x2="565" y2="182" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="340" y="198" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">chunkIndex</text><text x="550" y="198" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Int</text>
+
+      <!-- FK arrow -->
+      <path d="M 320 122 L 290 122" stroke="#FF5722" stroke-width="1.5" fill="none" marker-end="url(#arrowO5)"/>
+
+      <!-- ChatMessageEntity (Data layer = orange) -->
+      <rect x="610" y="48" width="260" height="130" rx="10" fill="#ffffff" stroke="#FF5722" stroke-width="1.5"/>
+      <rect x="610" y="48" width="260" height="32" rx="10" fill="rgba(255,87,34,0.07)"/>
+      <rect x="610" y="70" width="260" height="10" fill="#ffffff"/>
+      <text x="740" y="70" fill="#FF5722" font-size="11" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono', monospace">ChatMessageEntity</text>
+      <text x="630" y="102" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">id</text><text x="840" y="102" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Long  PK</text>
+      <line x1="625" y1="110" x2="855" y2="110" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="630" y="126" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">role</text><text x="840" y="126" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">String</text>
+      <line x1="625" y1="134" x2="855" y2="134" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="630" y="150" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">content</text><text x="840" y="150" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">String</text>
+      <line x1="625" y1="158" x2="855" y2="158" stroke="#e2e5eb" stroke-width="0.5"/>
+      <text x="630" y="174" fill="#3d4554" font-size="10" font-family="'JetBrains Mono', monospace">timestamp</text><text x="840" y="174" fill="#7c8494" font-size="9" text-anchor="end" font-family="'JetBrains Mono', monospace">Long</text>
+    </svg>
+    <div class="diagram-caption">Fig 4 — Room database schema with foreign key relationship</div>
+  </div>
+</section>
+
+<!-- Design Decisions -->
+<section id="decisions">
+  <div class="section-header reveal">
+    <div class="section-tag">05 — Design Decisions</div>
+    <div class="section-title">Notable Trade-offs</div>
+    <p class="section-subtitle">Deliberate choices that shape the app's character.</p>
+  </div>
+  <div class="decisions-grid">
+    <div class="decision-card reveal">
+      <h3>No Embeddings</h3>
+      <p>Retrieval is BM25 only — no vector DB, no semantic search. Simple, fast, and dependency-free, but misses paraphrase matching.</p>
+    </div>
+    <div class="decision-card reveal">
+      <h3>No Backend</h3>
+      <p>Everything runs on-device except the final Claude API call. Zero server infrastructure to maintain.</p>
+    </div>
+    <div class="decision-card reveal">
+      <h3>Encrypted Key Storage</h3>
+      <p>EncryptedSharedPreferences with AES-256-GCM via AndroidX Security. The API key stays safe at rest.</p>
+    </div>
+    <div class="decision-card reveal">
+      <h3>Persistent URI Permissions</h3>
+      <p>takePersistableUriPermission so PDF references survive app restarts without re-asking for access.</p>
+    </div>
+    <div class="decision-card reveal">
+      <h3>Raw HttpURLConnection</h3>
+      <p>No OkHttp, no Retrofit. A single HTTP client with minimal dependency overhead.</p>
+    </div>
+    <div class="decision-card reveal">
+      <h3>No DI Framework</h3>
+      <p>Repositories and clients are instantiated directly in ViewModels. Simple, explicit, no Dagger/Hilt complexity.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Tuning -->
+<section id="tuning">
+  <div class="section-header reveal">
+    <div class="section-tag">06 — Tuning Guide</div>
+    <div class="section-title">Highest-Leverage Parameters</div>
+    <p class="section-subtitle">Every tuneable value in the codebase and what moving it actually does.</p>
+  </div>
+
+  <div class="tuning-table-wrap reveal">
+    <table class="tuning-table">
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Current</th>
+          <th>Effect</th>
+          <th>Trade-off</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tuning-param">k (top chunks)</span></td>
+          <td><span class="tuning-value">5</span></td>
+          <td>Answer coverage vs. prompt noise</td>
+          <td class="tuning-effect">↑ More coverage, lower relevance per chunk. ↓ Tighter context, risk missing info.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">CHUNK_SIZE</span></td>
+          <td><span class="tuning-value">400 words</span></td>
+          <td>Retrieval precision vs. answer completeness</td>
+          <td class="tuning-effect">↓ Finer retrieval, may split answers. ↑ More context per chunk, BM25 scores dilute.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">OVERLAP</span></td>
+          <td><span class="tuning-value">50 words</span></td>
+          <td>Boundary coverage</td>
+          <td class="tuning-effect">↓ Risk boundary gaps. ↑ Diminishing returns, inflates chunk count.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">K1</span></td>
+          <td><span class="tuning-value">1.5</span></td>
+          <td>Term frequency saturation</td>
+          <td class="tuning-effect">↓ Binary presence/absence. ↑ Raw frequency dominates, long chunks win.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">B</span></td>
+          <td><span class="tuning-value">0.75</span></td>
+          <td>Length normalization</td>
+          <td class="tuning-effect">B=1 fully penalizes long docs. B=0 ignores length. Matters with variable page lengths.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">max_tokens</span></td>
+          <td><span class="tuning-value">1024</span></td>
+          <td>Answer length ceiling</td>
+          <td class="tuning-effect">Too low truncates answers. No cost to raising — you only pay for tokens generated.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">history limit</span></td>
+          <td><span class="tuning-value">20 messages</span></td>
+          <td>Conversational coherence vs. context budget</td>
+          <td class="tuning-effect">↑ Better follow-ups, eats context window. ↓ Cheaper, degrades multi-turn coherence.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">model</span></td>
+          <td><span class="tuning-value">sonnet-4-6</span></td>
+          <td>Quality vs. cost/speed</td>
+          <td class="tuning-effect">Haiku: faster, cheaper, weaker reasoning. Opus: stronger, more expensive, slower.</td>
+        </tr>
+        <tr>
+          <td><span class="tuning-param">system prompt</span></td>
+          <td><span class="tuning-value">strict grounding</span></td>
+          <td>Hallucination prevention vs. flexibility</td>
+          <td class="tuning-effect">"ONLY context" blocks hallucination but refuses general knowledge queries.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout reveal">
+    <h3>⚡ Key Interaction</h3>
+    <p>Raising <strong>k</strong> while also raising <strong>CHUNK_SIZE</strong> will quickly crowd out conversation history from the context window, degrading multi-turn coherence even as single-turn retrieval improves. History and retrieved chunks compete for the same context budget — there's no dynamic allocation between them.</p>
+  </div>
+</section>
+
+<!-- Source Code -->
+<section id="source">
+  <div class="section-header reveal">
+    <div class="section-tag">07 — Source Code</div>
+    <div class="section-title">GitHub Repository</div>
+    <p class="section-subtitle">The full source is open and ready to clone, fork, or contribute to.</p>
+  </div>
+  <div class="cta-grid">
+    <div class="cta-card reveal">
+      <div class="cta-icon" style="background:rgba(63,81,181,0.08);">📂</div>
+      <h3>Clone the Repo</h3>
+      <p>Get the full Android Studio project with all source files, Gradle config, and build scripts.</p>
+      <code>git clone https://github.com/user/pdf-chat-android.git</code>
+      <a href="https://github.com/user/pdf-chat-android" class="cta-btn cta-btn-primary" target="_blank">
+        View on GitHub →
+      </a>
+      <div class="cta-meta">MIT License · Kotlin · Jetpack Compose</div>
+    </div>
+    <div class="cta-card reveal">
+      <div class="cta-icon" style="background:rgba(63,81,181,0.08);">🗂</div>
+      <h3>Project Structure</h3>
+      <p>Key files and where to find them in the source tree.</p>
+      <div class="file-tree">
+        <span class="dir">app/src/main/java/.../</span><br>
+        ├── <span class="file">ui/</span> ChatScreen, LibraryScreen, SettingsScreen<br>
+        ├── <span class="file">viewmodel/</span> ChatViewModel, LibraryViewModel<br>
+        ├── <span class="file">repository/</span> PdfRepository, ChatRepository<br>
+        ├── <span class="highlight">data/</span> AppDatabase, Bm25Retriever, TextChunker<br>
+        ├── <span class="highlight">api/</span> ClaudeApiClient<br>
+        └── <span class="file">security/</span> SecurePreferences
+      </div>
+    </div>
+    <div class="cta-card reveal">
+      <div class="cta-icon" style="background:rgba(63,81,181,0.08);">⚙️</div>
+      <h3>Build Locally</h3>
+      <p>Requirements and steps to build from source.</p>
+      <div class="file-tree">
+        1. Android Studio Hedgehog+<br>
+        2. JDK 17<br>
+        3. Android SDK 35<br>
+        4. Add your Anthropic API key in-app<br>
+        5. <span class="highlight">./gradlew assembleDebug</span>
+      </div>
+      <a href="https://github.com/user/pdf-chat-android#readme" class="cta-btn cta-btn-secondary" target="_blank">
+        Read the README →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Download APK -->
+<section id="download">
+  <div class="section-header reveal">
+    <div class="section-tag">08 — Download</div>
+    <div class="section-title">Get the APK</div>
+    <p class="section-subtitle">Install directly on your Android device — no build tools required.</p>
+  </div>
+  <div class="cta-grid">
+    <div class="cta-card reveal">
+      <div class="cta-icon" style="background:rgba(76,175,80,0.10);">📱</div>
+      <h3>PDF Chat v1.0</h3>
+      <p>Pre-built release APK. Sideload onto any Android 10+ device.</p>
+      <a href="https://github.com/user/pdf-chat-android/releases/latest/download/pdf-chat-v1.0.apk" class="cta-btn cta-btn-green">
+        ⬇ Download APK
+      </a>
+      <div class="cta-meta">pdf-chat-v1.0.apk · ~12 MB · Android 10+</div>
+    </div>
+    <div class="cta-card reveal">
+      <div class="cta-icon" style="background:rgba(76,175,80,0.10);">🔒</div>
+      <h3>Install Notes</h3>
+      <p>You'll need to enable "Install from unknown sources" in your device settings since this isn't distributed via the Play Store. Your API key is stored encrypted on-device and never leaves the app.</p>
+      <div class="cta-meta">No server · No tracking · Your data stays local</div>
+    </div>
+    <div class="cta-card reveal">
+      <div class="cta-icon" style="background:rgba(76,175,80,0.10);">📋</div>
+      <h3>What's Included</h3>
+      <p>The APK ships with everything needed to run — PdfBox, the BM25 retriever, Room database, and Compose UI. Just add your Anthropic API key in Settings.</p>
+      <div class="file-tree">
+        ✓ PDF text extraction (PdfBox Android)<br>
+        ✓ BM25 keyword retrieval (on-device)<br>
+        ✓ Claude sonnet-4-6 integration<br>
+        ✓ AES-256 encrypted key storage<br>
+        ✓ Conversation history persistence
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Analysis generated by <span>Claude Code v2.1.139</span> · PDF Chat Android RAG App
+</footer>
+
+<script>
+function toggleComponent(header) {
+  const item = header.closest('.component-item');
+  item.classList.toggle('open');
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

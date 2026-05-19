@@ -1,0 +1,4 @@
+#Tue May 12 11:02:55 BST 2026
+base.0=C\:\\Users\\sjbradle\\Claude\\Repo2\\app\\build\\intermediates\\dex\\debugAndroidTest\\mergeProjectDexDebugAndroidTest\\0\\classes.dex
+path.0=0/classes.dex
+renamed.0=classes.dex
